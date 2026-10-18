@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoboTank V9 - Panel de Comando</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { background-color: #121212; color: #ffffff; font-family: monospace; text-align: center; margin: 0; padding: 20px; }
+        .cam-container { margin: 10px auto; border: 3px solid #00aaff; border-radius: 10px; overflow: hidden; max-width: 640px; box-shadow: 0 0 20px rgba(0, 170, 255, 0.2); }
+        .panel { background: #1e1e1e; padding: 25px; border-radius: 10px; border: 1px solid #333; margin: 20px auto; max-width: 800px; }
+        .dashboard-box { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; justify-content: space-around; margin-bottom: 20px; box-shadow: inset 0 0 10px #000; }
+        .dash-item { text-align: center; width: 33%; }
+        .dash-title { font-size: 12px; color: #888; letter-spacing: 1px; margin-bottom: 5px; }
+        .dash-value { font-size: 24px; font-weight: bold; }
+        button { cursor: pointer; font-family: monospace; font-weight: bold; outline: none; }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 RoboTank V9 Command Center</h1>
+
+    <div class="cam-container">
+        <img src="/video_feed" width="100%" alt="Camera Stream">
+    </div>
+
+    <div style="margin: 20px 0;">
+        <button id="btn_modo" onclick="toggleModo()" style="background: #0055ff; color: white; border: 2px solid #00aaff; padding: 15px 30px; font-size: 20px; border-radius: 8px; transition: 0.3s; box-shadow: 0 0 15px #00aaff;">
+            🧠 INICIAR MODO IA (AUTÓNOMO)
+        </button>
+    </div>
+
+    <div id="panel_manual" class="panel">
+        <h2 style="color: #00aaff; margin-top:0;">🛠️ PANEL DE CONDUCCIÓN MANUAL</h2>
+        
+        <div class="dashboard-box">
+            <div class="dash-item" style="border-right: 1px solid #333;">
+                <div class="dash-title">RADAR FRONTAL</div>
+                <div class="dash-value" style="color:#00ff00;"><span id="hud_dist">--</span> cm</div>
+            </div>
+            <div class="dash-item" style="border-right: 1px solid #333;">
+                <div class="dash-title">GIROSCOPIO (X / Y)</div>
+                <div class="dash-value" style="color:#ffcc00; font-size: 20px; margin-top: 4px;"><span id="hud_gx">0.0</span>° / <span id="hud_gy">0.0</span>°</div>
+            </div>
+            <div class="dash-item">
+                <div class="dash-title">ESTADO GAMEPAD</div>
+                <div class="dash-value" style="color:red; font-size: 18px; margin-top: 6px;" id="gamepad_status">Desconectado ❌</div>
+            </div>
+        </div>
+
+        <div style="text-align: left; display: inline-block; background: #111; padding: 15px 30px; border-radius: 8px; border: 1px dashed #555;">
+            <ul style="color: #aaa; list-style-type: square; font-size: 15px; margin: 0;">
+                <li><b style="color:#fff;">Orugas:</b> Palanca Izquierda (Adelante/Atrás/Girar)</li>
+                <li><b style="color:#fff;">Cámara:</b> Palanca Derecha (Arriba/Abajo/Izq/Der)</li>
+                <li><b style="color:#fff;">Brazo (Hombro):</b> Gatillos Traseros (L2 bajar / R2 subir)</li>
+                <li><b style="color:#fff;">Brazo (Codo):</b> Botones Frontales (L1 bajar / R1 subir)</li>
+                <li><b style="color:#fff;">Pinza:</b> Botones (X cerrar / Y abrir)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="panel_ia" class="panel" style="display: none; border: 2px solid #ff5588; box-shadow: 0 0 20px rgba(255, 85, 136, 0.1);">
+        <h2 style="color: #ff5588; margin-top:0;">👁️ NÚCLEO COGNITIVO ACTIVADO</h2>
+        <p style="color: #ccc;">El robot está escaneando el entorno. Usa el botón para enviar comandos de voz.</p>
+        
+        <button id="btn_mic" style="background: #28a745; color: white; border: 2px solid #34ce57; padding: 15px 30px; font-size: 20px; border-radius: 8px; transition: 0.3s; box-shadow: 0 0 15px #34ce57; margin: 15px 0;">
+            🎙️ HABLAR CON EL ROBOT
+        </button>
+        
+        <div style="margin-top: 15px; background: #000; border: 1px solid #444; padding: 15px; border-radius: 8px; text-align: left; height: 120px; overflow-y: auto;">
+            <p style="color: #555; margin: 0; font-size: 14px;">[SYS] Intercomunicador de voz en línea. Servidor IA listo.</p>
+            <p id="chat_status" style="color: #00ff00; font-size: 16px; margin-top: 10px;">> Esperando piloto...</p>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let modo_actual = "manual";
+
+        function toggleModo() {
+            const btn = document.getElementById('btn_modo');
+            const panelManual = document.getElementById('panel_manual');
+            const panelIA = document.getElementById('panel_ia');
+
+            if (modo_actual === "manual") {
+                modo_actual = "auto";
+                btn.style.background = "#ff0055";
+                btn.style.borderColor = "#ff5588";
+                btn.style.boxShadow = "0 0 15px #ff5588";
+                btn.innerText = "🎮 DESACTIVAR IA Y VOLVER A MANUAL";
+                panelManual.style.display = "none";
+                panelIA.style.display = "block";
+            } else {
+                modo_actual = "manual";
+                btn.style.background = "#0055ff";
+                btn.style.borderColor = "#00aaff";
+                btn.style.boxShadow = "0 0 15px #00aaff";
+                btn.innerText = "🧠 INICIAR MODO IA (AUTÓNOMO)";
+                panelIA.style.display = "none";
+                panelManual.style.display = "block";
+            }
+            socket.emit('cambiar_modo', { modo: modo_actual });
+        }
+
+        socket.on('telemetria', function(data) {
+            document.getElementById('hud_dist').innerText = data.distancia;
+            if (data.imu && data.imu.accel) {
+                document.getElementById('hud_gx').innerText = data.imu.accel.x.toFixed(2);
+                document.getElementById('hud_gy').innerText = data.imu.accel.y.toFixed(2);
+            }
+        });
+
+        const btnMic = document.getElementById('btn_mic');
+        const chatStatus = document.getElementById('chat_status');
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            
+            recognition.onstart = function() {
+                btnMic.innerText = "🔴 ESCUCHANDO...";
+                btnMic.style.background = "#dc3545";
+                btnMic.style.borderColor = "#ff4a5a";
+                btnMic.style.boxShadow = "0 0 15px #ff4a5a";
+                chatStatus.innerText = "🗣️ Tú: (Escuchando...)";
+            };
+            
+            recognition.onresult = function(event) {
+                const comando = event.results[0][0].transcript;
+                chatStatus.innerText = "🗣️ Tú: " + comando + "\n> Enviando a Gemini...";
+                socket.emit('comando_voz', { texto: comando });
+            };
+            
+            recognition.onend = function() {
+                btnMic.innerText = "🎙️ HABLAR CON EL ROBOT";
+                btnMic.style.background = "#28a745";
+                btnMic.style.borderColor = "#34ce57";
+                btnMic.style.boxShadow = "0 0 15px #34ce57";
+            };
+            
+            btnMic.onclick = () => { recognition.start(); };
+        } else {
+            btnMic.innerText = "❌ Navegador no compatible con Voz";
+            btnMic.disabled = true;
+        }
+
+        socket.on('respuesta_voz', function(data) {
+            chatStatus.innerText = "🤖 Robot: " + data.texto;
+            const utterance = new SpeechSynthesisUtterance(data.texto);
+            utterance.lang = 'es-ES';
+            utterance.pitch = 0.8;
+            window.speechSynthesis.speak(utterance);
+        });
+
+        let gamepadIndex = null;
+        window.addEventListener("gamepadconnected", (e) => {
+            gamepadIndex = e.gamepad.index;
+            document.getElementById('gamepad_status').innerText = "Conectado ✅";
+            document.getElementById('gamepad_status').style.color = "#00ff00";
+            requestAnimationFrame(updateGamepad);
+        });
+
+        window.addEventListener("gamepaddisconnected", (e) => {
+            if (gamepadIndex === e.gamepad.index) {
+                gamepadIndex = null;
+                document.getElementById('gamepad_status').innerText = "Desconectado ❌";
+                document.getElementById('gamepad_status').style.color = "red";
+            }
+        });
+
+        function updateGamepad() {
+            if (gamepadIndex !== null) {
+                const gp = navigator.getGamepads()[gamepadIndex];
+                if (gp) {
+                    const data = {
+                        eje_x: gp.axes[0], eje_y: gp.axes[1],
+                        cam_x: gp.axes[2], cam_y: gp.axes[3],
+                        brazo_subir: gp.buttons[7].pressed, brazo_bajar: gp.buttons[6].pressed,
+                        muneca_subir: gp.buttons[5].pressed, muneca_bajar: gp.buttons[4].pressed,
+                        garra_abrir: gp.buttons[3].pressed, garra_cerrar: gp.buttons[2].pressed
+                    };
+                    socket.emit('joystick_data', data);
+                }
+            }
+            requestAnimationFrame(updateGamepad);
+        }
+    </script>
+</body>
+</html>
