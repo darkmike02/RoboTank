@@ -12,7 +12,7 @@ import json
 import ia_commands # <--- AÑADIR TU NUEVO DICCIONARIO
 
 # --- CONFIGURACIÓN DE IA (GEMINI) ---
-genai.configure(api_key="AIzaSyCJeQf4pzRv5R4q8CNX1SFipPjvTSgl9W4")
+genai.configure(api_key=open(".env").read().split("=")[1].strip())
 modelo_ia = genai.GenerativeModel('models/gemini-flash-latest')
 
 # --- INICIALIZAR HARDWARE DEL ROBOT ---
