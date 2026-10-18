@@ -17,3 +17,7 @@ Evolucionar la plataforma RoboTank V9 hacia un sistema autónomo cognitivo divid
   * Primer commit base (`af97d0f`) aislando el código funcional de `robot_v9_system`.
   * Limpieza de archivos multimedia temporales (`.jpg`, `.mjpg`) mediante `.gitignore`.
   * Definición de metodología de trabajo por bloques cerrados y protocolos de prueba.
+
+### 🏛️ Regla de Arquitectura: Separación de Modos (Manual vs. Autónomo)
+* **Consola Manual (`main_server.py`):** Se conserva íntegra para teleoperación por joystick, pruebas de entorno y control directo.
+* **Núcleo Autónomo (`mission_loop.py` + `vision_engine.py` + `navigation_engine.py`):** Línea principal de desarrollo V10. Aquí se integrará la toma de decisiones cognitiva, secuencias *Pick & Place* (pelota al bote), modo dibujo vectorial y agentes proactivos (clima/entorno).
