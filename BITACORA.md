@@ -21,3 +21,13 @@ Evolucionar la plataforma RoboTank V9 hacia un sistema autónomo cognitivo divid
 ### 🏛️ Regla de Arquitectura: Separación de Modos (Manual vs. Autónomo)
 * **Consola Manual (`main_server.py`):** Se conserva íntegra para teleoperación por joystick, pruebas de entorno y control directo.
 * **Núcleo Autónomo (`mission_loop.py` + `vision_engine.py` + `navigation_engine.py`):** Línea principal de desarrollo V10. Aquí se integrará la toma de decisiones cognitiva, secuencias *Pick & Place* (pelota al bote), modo dibujo vectorial y agentes proactivos (clima/entorno).
+
+### Sesión 02 - Auditoría de Código, Definición de Alcance V10 y Protocolo de Pruebas
+* **Estado:** Completado ✅
+* **Acuerdos de Ingeniería:**
+  * Se descarta modo dibujo por resolución angular física de servos ($\sim 3.14\text{ mm/grado}$ a $18\text{ cm}$). Enfoque 100% en Pick & Place autónomo y comportamiento proactivo estilo WALL-E (curiosidad visual local + IA).
+  * Creación de `run_autonomous.py` en raíz con reporte de telemetría automatizado.
+  * Creación de `CONTEXTO_IA.md` para persistencia de memoria técnica entre sesiones.
+* **Bugs Detectados Pendientes de Test Físico:**
+  * Umbrales invertidos en `mission_loop.py` (`distancia_parada_p1 = 18` vs `distancia_parada_final = 22.0`).
+  * Falta actualización de diccionario `self.angulos` tras ejecutar `mover_brazo_a()`.
