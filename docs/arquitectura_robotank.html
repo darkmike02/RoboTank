@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoboTank V9/V10 — Documentación Viva del Sistema</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e6edf3;min-height:100vh;padding:24px 16px}
+h1{text-align:center;font-size:20px;font-weight:700;color:#58a6ff;margin-bottom:4px}
+.sub{text-align:center;font-size:12px;color:#8b949e;margin-bottom:22px;line-height:1.6}
+
+/* TABS */
+.tabs{display:flex;gap:6px;justify-content:center;margin-bottom:22px;flex-wrap:wrap}
+.tab{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #30363d;background:#161b22;color:#8b949e;transition:.2s}
+.tab.on{background:#1f6feb;border-color:#388bfd;color:#fff}
+.tab:not(.on):hover{border-color:#58a6ff;color:#58a6ff}
+.panel{display:none}.panel.on{display:block}
+
+/* CARDS */
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-bottom:16px}
+.ct{font-size:15px;font-weight:700;color:#e6edf3;margin-bottom:5px}
+.cs{font-size:12px;color:#8b949e;margin-bottom:14px;line-height:1.65}
+
+/* DIAGNOSTICO */
+.diag-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:640px){.diag-grid{grid-template-columns:1fr}}
+.diag-item{border-radius:8px;padding:12px 14px}
+.ok{background:#1a2a1a;border-left:3px solid #56d364}
+.warn{background:#3a2a10;border-left:3px solid #e3b341}
+.err{background:#2a1a1a;border-left:3px solid #ff7b72}
+.info{background:#1a1a3a;border-left:3px solid #79c0ff}
+.diag-title{font-size:12px;font-weight:700;margin-bottom:4px}
+.ok .diag-title{color:#56d364}.warn .diag-title{color:#e3b341}
+.err .diag-title{color:#ff7b72}.info .diag-title{color:#79c0ff}
+.diag-body{font-size:11px;color:#8b949e;line-height:1.6}
+
+/* SVG */
+.sw{width:100%;overflow-x:auto;margin-bottom:8px}
+svg{display:block}
+
+/* FUNCTION TABLE */
+.ftbl{width:100%;border-collapse:collapse;font-size:12px}
+.ftbl th{background:#1f3a5f;color:#79c0ff;padding:8px 11px;text-align:left;font-weight:700;border-bottom:2px solid #388bfd;font-size:11px}
+.ftbl td{padding:7px 11px;border-bottom:1px solid #21262d;vertical-align:top}
+.ftbl tr:last-child td{border-bottom:none}
+.ftbl tr:nth-child(even) td{background:#0d1117}
+.fn{font-family:'Courier New',monospace;font-size:11px;color:#d2a8ff;font-weight:700}
+.fdesc{color:#8b949e;font-size:11px}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;white-space:nowrap}
+.tg{background:#1a2a1a;color:#56d364}.tb{background:#1f3a5f;color:#79c0ff}
+.tp{background:#2d1f5e;color:#d2a8ff}.ta{background:#3a2a10;color:#e3b341}
+.tr{background:#2a1a1a;color:#ff7b72}
+
+/* TEST CARDS */
+.test-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.test-card{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px}
+.test-name{font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:#e3b341;margin-bottom:5px}
+.test-desc{font-size:11.5px;color:#8b949e;line-height:1.6}
+.test-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 8px;border-radius:8px;margin-top:6px}
+.tb-hw{background:#2d1f5e;color:#d2a8ff}
+.tb-vis{background:#1a2a1a;color:#56d364}
+.tb-nav{background:#1f3a5f;color:#79c0ff}
+.tb-ik{background:#3a2a10;color:#e3b341}
+.tb-int{background:#2a1a1a;color:#ff7b72}
+
+.slabel{font-size:11px;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 10px}
+</style>
+</head>
+<body>
+
+<h1>RoboTank V9 → V10 (Motor V11.8) — Documentación Viva · 23 Octubre 2026</h1>
+<p class="sub">Auditoría de código real · Arquitectura Dual (Manual vs Autónomo) · Estado de Ingeniería Sesiones 01-02</p>
+
+<div class="tabs">
+  <div class="tab on" onclick="tab('diagnostico')">🔬 Diagnóstico Actual</div>
+  <div class="tab" onclick="tab('arquitectura')">🏗️ Arquitectura Dual</div>
+  <div class="tab" onclick="tab('main')">⚙️ main_server (Manual)</div>
+  <div class="tab" onclick="tab('mision')">🧠 mission_loop (V11.8)</div>
+  <div class="tab" onclick="tab('drivers')">🔧 Drivers & Config</div>
+  <div class="tab" onclick="tab('motores')">🤖 robot_controller</div>
+  <div class="tab" onclick="tab('tests')">🧪 Runner & Tests</div>
+</div>
+
+<!-- ══════════ PESTAÑA 1: DIAGNÓSTICO ══════════ -->
+<div class="panel on" id="p-diagnostico">
+<div class="card">
+  <div class="ct">Auditoría Técnica del Sistema — Actualizado 23/10/2026</div>
+  <p class="cs">Estado verificado contra el repositorio GitHub (darkmike02/RoboTank) y código en producción V11.8.</p>
+
+  <div class="slabel">✅ Hitos y Correcciones Consolidadas</div>
+  <div class="diag-grid">
+    <div class="diag-item ok">
+      <div class="diag-title">SEGURIDAD RESUELTA — API Key en .env</div>
+      <div class="diag-body">La llave de Gemini fue extraída de main_server.py y aislada en el archivo local .env (excluido en .gitignore).</div>
+    </div>
+    <div class="diag-item ok">
+      <div class="diag-title">OFFSET_ELBOW = 135 VALIDADO MATEMÁTICAMENTE</div>
+      <div class="diag-body">No es un bug: robot_controller.py aplica codo_corregido = 270 - (135 + deflection) = 135 - deflection. El valor 135° corresponde al brazo recto físico doblando en resta.</div>
+    </div>
+    <div class="diag-item ok">
+      <div class="diag-title">V11.8 ACTIVE-SCAN 2D + TELEMETRÍA TÁCTICA</div>
+      <div class="diag-body">mission_loop.py incorpora barrido simultáneo en rejilla (Base 30°↔150° y Tilt 30°↔100°) con log sincronizado cada 0.5s y pausa_tactica() desactivada para flujo continuo.</div>
+    </div>
+    <div class="diag-item ok">
+      <div class="diag-title">VISION ENGINE DUAL (BYPASS + FILTRO ESPACIAL)</div>
+      <div class="diag-body">Detecta rojo sobre pedestal azul de lejos y activa bypass automático en proximidad cuando area_r > 5000px con clausura morfológica 7×7.</div>
+    </div>
+    <div class="diag-item ok">
+      <div class="diag-title">SEPARACIÓN LIMPIA: run_autonomous.py vs tests/</div>
+      <div class="diag-body">Todos los scripts unitarios se movieron a tests/ y se creó run_autonomous.py en raíz para evitar ModuleNotFoundError y emitir reportes de telemetría al cierre.</div>
+    </div>
+    <div class="diag-item ok">
+      <div class="diag-title">DESCARTE DE MODO DIBUJO POR RESOLUCIÓN ANGULAR</div>
+      <div class="diag-body">Con servos en pasos enteros de 1° a R=18cm, el salto mínimo en punta es de 3.14mm. Se enfoca el 100% de V10 en Pick & Place y reflejos estilo WALL-E.</div>
+    </div>
+  </div>
+
+  <div class="slabel">🚨 Bugs Activos Detectados en Auditoría (Para Resolver en Sesión 03)</div>
+  <div class="diag-grid">
+    <div class="diag-item err">
+      <div class="diag-title">BUG-004: Umbrales P1 y P2 invertidos en mission_loop.py</div>
+      <div class="diag-body">Actualmente distancia_parada_p1 = 18 y distancia_parada_final = 22.0. Al frenar en 18cm en P1, el error en P2 (18 - 22 = -4 <= 0) hace que se salte ACERCANDO_P2 en 0 segundos. Pendiente test físico para fijar P1 (~28cm) y P2 (~18-22cm).</div>
+    </div>
+    <div class="diag-item err">
+      <div class="diag-title">BUG-005: Desincronización de self.angulos en mover_brazo_a()</div>
+      <div class="diag-body">Cuando la cinemática inversa mueve los canales 0, 1 y 2, envía el pulso directo a servo.ctrl() pero NO actualiza el diccionario self.angulos en Robot. Provoca riesgo de latigazo al volver a control incremental.</div>
+    </div>
+    <div class="diag-item warn">
+      <div class="diag-title">NavigationEngine inyectado pero no utilizado</div>
+      <div class="diag-body">MissionLoop recibe self.nav = nav en su constructor pero toda la locomoción PID ocurre llamando directo a self.bot.avanzar(). Se rediseñará como módulo independiente de navegación/evasión.</div>
+    </div>
+    <div class="diag-item info">
+      <div class="diag-title">Próxima Evolución: Bucle de Curiosidad Local (WALL-E)</div>
+      <div class="diag-body">Para no saturar la cuota ni bloquear hilos con Gemini, la detección de movimiento y rostros correrá localmente en OpenCV a 15Hz, disparando a la IA solo ante eventos relevantes.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ PESTAÑA 2: ARQUITECTURA ══════════ -->
+<div class="panel" id="p-arquitectura">
+<div class="card">
+  <div class="ct">Arquitectura Dual del Sistema (Consola Manual vs. Núcleo Autónomo)</div>
+  <p class="cs">Regla de ingeniería acordada: Ambos modos operan con su propio lanzador en la raíz compartiendo la capa de hardware (drivers/).</p>
+  <div class="sw">
+  <svg viewBox="0 0 860 520" width="860" style="max-width:100%">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Lanzador 1: Manual -->
+  <rect x="460" y="16" width="240" height="44" rx="10" fill="#1a1a3a" stroke="#58a6ff" stroke-width="2"/>
+  <text x="580" y="35" text-anchor="middle" font-size="13" font-weight="700" fill="#58a6ff" font-family="Segoe UI">main_server.py (Modo Manual)</text>
+  <text x="580" y="51" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Flask + SocketIO · Teleoperación Web</text>
+
+  <!-- Lanzador 2: Autónomo -->
+  <rect x="120" y="16" width="240" height="44" rx="10" fill="#1a3a2a" stroke="#56d364" stroke-width="2"/>
+  <text x="240" y="35" text-anchor="middle" font-size="13" font-weight="700" fill="#56d364" font-family="Segoe UI">run_autonomous.py (Modo Auto)</text>
+  <text x="240" y="51" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Lanzador 10Hz + Reporte Telemetría</text>
+
+  <!-- Flechas desde run_autonomous -->
+  <line x1="240" y1="60" x2="240" y2="180" stroke="#56d364" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="240" y1="60" x2="430" y2="110" stroke="#56d364" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Flechas desde main_server -->
+  <line x1="580" y1="60" x2="430" y2="110" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="580" y1="60" x2="660" y2="110" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="330" y="110" width="200" height="44" rx="8" fill="#1a3a2a" stroke="#56d364" stroke-width="1.5"/>
+  <text x="430" y="129" text-anchor="middle" font-size="12" font-weight="700" fill="#56d364" font-family="Segoe UI">drivers/camera_stream</text>
+  <text x="430" y="145" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Stream YUV420 via libcamera-vid</text>
+
+  <rect x="560" y="110" width="200" height="44" rx="8" fill="#2d1f5e" stroke="#d2a8ff" stroke-width="1.5"/>
+  <text x="660" y="129" text-anchor="middle" font-size="12" font-weight="700" fill="#d2a8ff" font-family="Segoe UI">ia_commands.py + .env</text>
+  <text x="660" y="145" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Acciones de voz Gemini Flash</text>
+
+  <!-- Capa 2: Motores funcionales autónomos -->
+  <rect x="140" y="180" width="200" height="48" rx="8" fill="#3a1010" stroke="#ffa657" stroke-width="1.5"/>
+  <text x="240" y="200" text-anchor="middle" font-size="12" font-weight="700" fill="#ffa657" font-family="Segoe UI">mission_loop.py (V11.8)</text>
+  <text x="240" y="216" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Máquina de Estados + Active Scan 2D</text>
+
+  <rect x="380" y="180" width="200" height="48" rx="8" fill="#2d1f5e" stroke="#d2a8ff" stroke-width="1.5"/>
+  <text x="480" y="200" text-anchor="middle" font-size="12" font-weight="700" fill="#d2a8ff" font-family="Segoe UI">vision_engine.py</text>
+  <text x="480" y="216" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">HSV Dual: Rojo/Azul + Bypass >5000px</text>
+
+  <line x1="240" y1="228" x2="240" y2="310" stroke="#ffa657" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="240" y1="228" x2="480" y2="310" stroke="#ffa657" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="340" y1="204" x2="380" y2="204" stroke="#ffa657" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="580" y1="60" x2="480" y2="310" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#ah)"/>
+
+  <!-- Capa 3: robot_controller y navigation -->
+  <rect x="140" y="310" width="200" height="44" rx="8" fill="#1a1a3a" stroke="#79c0ff" stroke-width="1.5"/>
+  <text x="240" y="328" text-anchor="middle" font-size="12" font-weight="700" fill="#79c0ff" font-family="Segoe UI">navigation_engine.py</text>
+  <text x="240" y="344" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Reflejos US (En rediseño para V10)</text>
+
+  <rect x="380" y="310" width="200" height="44" rx="8" fill="#1f3a5f" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="480" y="328" text-anchor="middle" font-size="12" font-weight="700" fill="#58a6ff" font-family="Segoe UI">drivers/robot_controller.py</text>
+  <text x="480" y="344" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Clase Robot · API Unificada HW</text>
+
+  <rect x="620" y="310" width="200" height="44" rx="8" fill="#3a2a10" stroke="#e3b341" stroke-width="1.5"/>
+  <text x="720" y="328" text-anchor="middle" font-size="12" font-weight="700" fill="#e3b341" font-family="Segoe UI">drivers/kinematics.py</text>
+  <text x="720" y="344" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">IK 3DOF · Ley de Cosenos</text>
+
+  <line x1="580" y1="332" x2="620" y2="332" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <!-- Capa 4: Hardware drivers -->
+  <line x1="480" y1="354" x2="180" y2="430" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="480" y1="354" x2="340" y2="430" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="480" y1="354" x2="500" y2="430" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="480" y1="354" x2="680" y2="430" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="110" y="430" width="140" height="36" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+  <text x="180" y="453" text-anchor="middle" font-size="11" font-weight="700" fill="#58a6ff" font-family="Segoe UI">move.py (Motores DC)</text>
+
+  <rect x="270" y="430" width="140" height="36" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+  <text x="340" y="453" text-anchor="middle" font-size="11" font-weight="700" fill="#58a6ff" font-family="Segoe UI">servo.py (PCA9685)</text>
+
+  <rect x="430" y="430" width="140" height="36" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+  <text x="500" y="453" text-anchor="middle" font-size="11" font-weight="700" fill="#58a6ff" font-family="Segoe UI">ultra.py · mpu6050</text>
+
+  <rect x="590" y="430" width="190" height="36" rx="6" fill="#21262d" stroke="#58a6ff" stroke-width="1"/>
+  <text x="685" y="453" text-anchor="middle" font-size="11" font-weight="700" fill="#58a6ff" font-family="Segoe UI">robotLight · OLED · config</text>
+  </svg>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ PESTAÑA 3: MAIN SERVER ══════════ -->
+<div class="panel" id="p-main">
+<div class="card">
+  <div class="ct">main_server.py — Consola de Teleoperación Manual y Chat de Voz</div>
+  <p class="cs">Se preserva íntegro para control remoto por joystick web, pruebas de terreno y comandos básicos por voz con Gemini.</p>
+
+  <div class="slabel">Variables globales y configuración</div>
+  <table class="ftbl" style="margin-bottom:14px">
+    <tr><th>Elemento</th><th>Estado / Tipo</th><th>Descripción</th></tr>
+    <tr><td class="fn">genai.configure(...)</td><td><span class="tag tg">Seguro (.env)</span></td><td class="fdesc">Lee la clave dinámicamente desde el archivo local .env sin exponerla en código fuente.</td></tr>
+    <tr><td class="fn">ultimo_frame_camara</td><td><span class="tag tb">bytes</span></td><td class="fdesc">Último JPEG capturado por generate_frames().</td></tr>
+    <tr><td class="fn">MODO_OPERACION</td><td><span class="tag tb">str</span></td><td class="fdesc">"manual" | "auto". En manual habilita el control por joystick_data.</td></tr>
+    <tr><td class="fn">MODO_RASTREO_ROJO</td><td><span class="tag tg">bool</span></td><td class="fdesc">Activa el seguimiento de cuello (cv_tracking_loop a 20Hz) por comando de voz.</td></tr>
+  </table>
+
+  <div class="slabel">Eventos WebSocket y Hilos</div>
+  <table class="ftbl">
+    <tr><th>Función / Evento</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td class="fn">joystick_data</td><td><span class="tag tb">WS Event</span></td><td class="fdesc">Controla orugas (move.move), cuello (bot.mover_camara) y articulaciones (brazo, muñeca, garra) con caché estado_anterior.</td></tr>
+    <tr><td class="fn">comando_voz</td><td><span class="tag tp">WS Event</span></td><td class="fdesc">Envía texto + foto vision_chat.jpg a Gemini. Extrae etiquetas [ACCION: ...] y ejecuta ia_commands.py.</td></tr>
+    <tr><td class="fn">cv_tracking_loop()</td><td><span class="tag ta">bg_task 20Hz</span></td><td class="fdesc">Centra la cámara en objetos rojos con zona muerta de 40px.</td></tr>
+    <tr><td class="fn">background_telemetry()</td><td><span class="tag ta">bg_task 1Hz</span></td><td class="fdesc">Emite distancia ultrasónica e IMU a la web y actualiza semáforo LED (rojo &lt;5cm, amarillo &lt;=10cm, verde &gt;10cm).</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- ══════════ PESTAÑA 4: MISSION LOOP ══════════ -->
+<div class="panel" id="p-mision">
+<div class="card">
+  <div class="ct">mission_loop.py — Máquina de Estados V11.8 (Active-Scan 2D)</div>
+  <p class="cs">Ejecución continua sin paradas bloqueantes input(). Incluye telemetría cada 0.5s y sub-máquina de captura guiada en 5 fases.</p>
+
+  <div class="sw">
+  <svg viewBox="0 0 860 650" width="860" style="max-width:100%">
+  <defs>
+    <marker id="ahm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- BUSCANDO -->
+  <rect x="260" y="16" width="260" height="60" rx="10" fill="#1a2a1a" stroke="#56d364" stroke-width="2"/>
+  <text x="390" y="38" text-anchor="middle" font-size="13" font-weight="700" fill="#56d364" font-family="Segoe UI">1. BUSCANDO (Active Scan 2D)</text>
+  <text x="390" y="54" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Barrido Base 30°↔150° (paso 3°) · Tilt 30°↔100° (paso 2°)</text>
+
+  <line x1="390" y1="76" x2="390" y2="106" stroke="#56d364" stroke-width="1.5" marker-end="url(#ahm)"/>
+  <text x="435" y="95" font-size="10" fill="#56d364" font-family="Segoe UI">ve_objeto == True</text>
+
+  <!-- ALINEANDO -->
+  <rect x="260" y="106" width="260" height="64" rx="10" fill="#1f3a5f" stroke="#79c0ff" stroke-width="2"/>
+  <text x="390" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#79c0ff" font-family="Segoe UI">2. ALINEANDO</text>
+  <text x="390" y="144" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Centra TARGET_CX=147 (±10px) · Giro orugas v=77</text>
+  <text x="390" y="158" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Pasa si |angulo_radar - 90°| &lt; 6°</text>
+
+  <line x1="390" y1="170" x2="390" y2="200" stroke="#79c0ff" stroke-width="1.5" marker-end="url(#ahm)"/>
+
+  <!-- ACERCANDO P1 -->
+  <rect x="260" y="200" width="260" height="74" rx="10" fill="#2d1f5e" stroke="#d2a8ff" stroke-width="2"/>
+  <text x="390" y="222" text-anchor="middle" font-size="13" font-weight="700" fill="#d2a8ff" font-family="Segoe UI">3. ACERCANDO_P1</text>
+  <text x="390" y="238" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">PID (Kp=2.5 Ki=0.01 Kd=0.5) · v [45, 80]</text>
+  <text x="390" y="252" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Tracking Tilt (cy &gt; 130 o &lt; 110) · Aborta tras 15 pérdidas</text>
+  <text x="390" y="266" text-anchor="middle" font-size="10" fill="#ff7b72" font-family="Segoe UI">⚠ Meta actual: dist_parada_p1 = 18cm (US + OFFSET 10cm)</text>
+
+  <line x1="390" y1="274" x2="390" y2="304" stroke="#d2a8ff" stroke-width="1.5" marker-end="url(#ahm)"/>
+
+  <!-- EVALUANDO -->
+  <rect x="260" y="304" width="260" height="68" rx="10" fill="#3a3a10" stroke="#e3b341" stroke-width="2"/>
+  <text x="390" y="326" text-anchor="middle" font-size="13" font-weight="700" fill="#e3b341" font-family="Segoe UI">4. EVALUANDO</text>
+  <text x="390" y="342" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Micro-ajuste fino v=45 si |diff_p1| &gt; 2.5cm</text>
+  <text x="390" y="358" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Estabilización de 0.8s recolectando muestras_us</text>
+
+  <line x1="390" y1="372" x2="390" y2="402" stroke="#e3b341" stroke-width="1.5" marker-end="url(#ahm)"/>
+
+  <!-- ACERCANDO P2 -->
+  <rect x="260" y="402" width="260" height="74" rx="10" fill="#2d1545" stroke="#bc8cff" stroke-width="2"/>
+  <text x="390" y="424" text-anchor="middle" font-size="13" font-weight="700" fill="#bc8cff" font-family="Segoe UI">5. ACERCANDO_P2</text>
+  <text x="390" y="440" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">PID v [45, 65] · Paciencia táctica (baja mirada si pierde)</text>
+  <text x="390" y="454" text-anchor="middle" font-size="10" fill="#ff7b72" font-family="Segoe UI">⚠ Meta actual: dist_parada_final = 22.0cm (Se salta si P1=18)</text>
+  <text x="390" y="468" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">Al llegar: activa fase_guia = "HOVER"</text>
+
+  <line x1="390" y1="476" x2="390" y2="506" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#ahm)"/>
+
+  <!-- CAPTURANDO -->
+  <rect x="220" y="506" width="340" height="80" rx="10" fill="#3a2a10" stroke="#ffa657" stroke-width="2"/>
+  <text x="390" y="526" text-anchor="middle" font-size="13" font-weight="700" fill="#ffa657" font-family="Segoe UI">6. CAPTURANDO (_ejecutar_grab_guiado)</text>
+  <text x="390" y="544" text-anchor="middle" font-size="10" fill="#e6edf3" font-family="Segoe UI">HOVER (14,0,12) → CENTERING (error_x ≤ 5px) → GRAB_ALIGN</text>
+  <text x="390" y="560" text-anchor="middle" font-size="10" fill="#e6edf3" font-family="Segoe UI">→ GRAB_DESCEND (baja de 2 en 2cm hasta Z_GRAB=10.5cm)</text>
+  <text x="390" y="576" text-anchor="middle" font-size="10" fill="#8b949e" font-family="Segoe UI">→ GRAB_CLOSE (cierra garra a 50° y eleva a (12,0,20) → COMPLETADO)</text>
+
+  <!-- Panel lateral de constantes -->
+  <rect x="610" y="106" width="230" height="250" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="725" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#58a6ff" font-family="Segoe UI">CONSTANTES V11.8 EN CÓDIGO</text>
+  <text x="626" y="150" font-size="10" fill="#e6edf3" font-family="monospace">H_EJE = 19.0 cm</text>
+  <text x="626" y="168" font-size="10" fill="#e6edf3" font-family="monospace">OFFSET_BRAZO = 10 cm</text>
+  <text x="626" y="186" font-size="10" fill="#e6edf3" font-family="monospace">Z_GRAB = 10.5 cm</text>
+  <text x="626" y="204" font-size="10" fill="#e6edf3" font-family="monospace">TARGET_CX = 147 px</text>
+  <text x="626" y="222" font-size="10" fill="#e6edf3" font-family="monospace">TARGET_CY = 120 px</text>
+  <text x="626" y="244" font-size="10" fill="#ff7b72" font-family="monospace">distancia_parada_p1 = 18</text>
+  <text x="626" y="262" font-size="10" fill="#ff7b72" font-family="monospace">distancia_parada_final = 22.0</text>
+  <text x="626" y="284" font-size="10" fill="#56d364" font-family="monospace">Kp=2.5 | Ki=0.01 | Kd=0.5</text>
+  <text x="626" y="306" font-size="10" fill="#8b949e" font-family="Segoe UI">Nota: pausa_tactica() está</text>
+  <text x="626" y="320" font-size="10" fill="#8b949e" font-family="Segoe UI">comentada (ejecución fluida).</text>
+  </svg>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ PESTAÑA 5: DRIVERS ══════════ -->
+<div class="panel" id="p-drivers">
+<div class="card">
+  <div class="ct">Módulos de Percepción y Hardware (drivers/)</div>
+  <p class="cs">Resumen de firmas y constantes físicas activas.</p>
+
+  <div class="slabel">vision_engine.py</div>
+  <table class="ftbl" style="margin-bottom:14px">
+    <tr><th>Método</th><th>Retorno</th><th>Lógica V11.8</th></tr>
+    <tr><td class="fn">buscar_coordenadas_rojas(frame_bytes)</td><td><span class="tag tp">(bool, cx, cy, area)</span></td><td class="fdesc">Rangos estrictos HSV: Rojo ([0,160,100]-[10,255,255] y [170,160,100]-[180,255,255]), Azul ([100,180,100]-[130,255,255]). Clausura morfológica 7×7. Si area_r &gt; 5000px retorna True directo (bypass de proximidad); si no, exige pedestal azul alineado (|cx_r - cx_b| &lt; 60).</td></tr>
+  </table>
+
+  <div class="slabel">drivers/config_robot.py & kinematics.py</div>
+  <table class="ftbl">
+    <tr><th>Constante / Función</th><th>Valor</th><th>Notas de Ingeniería</th></tr>
+    <tr><td class="fn">L0 / L1 / L2</td><td>20.0 / 13.0 / 13.0 cm</td><td class="fdesc">Altura de hombro (20cm), Húmero (13cm) y Antebrazo (13cm). Alcance máximo extendido = 26cm.</td></tr>
+    <tr><td class="fn">OFFSET_SHOULDER</td><td><span class="tag tg">50</span></td><td class="fdesc">Hombro horizontal en 0° matemático.</td></tr>
+    <tr><td class="fn">OFFSET_ELBOW</td><td><span class="tag tg">135</span></td><td class="fdesc">Operando en conjunto con codo_corregido = 270 - angulos['codo'] en robot_controller.py.</td></tr>
+    <tr><td class="fn">inverse_kinematics(x,y,z)</td><td><span class="tag tp">{base, hombro, codo}</span></td><td class="fdesc">Resuelve triángulo por Ley de Cosenos (configuración codo arriba) y retorna ángulos enteros int().</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- ══════════ PESTAÑA 6: ROBOT CONTROLLER ══════════ -->
+<div class="panel" id="p-motores">
+<div class="card">
+  <div class="ct">drivers/robot_controller.py — Clase Robot</div>
+  <p class="cs">Interfaz central de hardware para ambos modos (Manual y Autónomo).</p>
+
+  <div class="slabel">Mapeo de Canales PCA9685</div>
+  <table class="ftbl" style="margin-bottom:14px">
+    <tr><th>Canal</th><th>Clave</th><th>Rango / Valores Clave</th></tr>
+    <tr><td class="fn">Canal 0</td><td>base</td><td class="fdesc">Giro pan de brazo y cámara. Centro = 90°, límites [20°, 160°].</td></tr>
+    <tr><td class="fn">Canal 1</td><td>brazo</td><td class="fdesc">Hombro. Límites manuales [30°, 150°].</td></tr>
+    <tr><td class="fn">Canal 2</td><td>muneca</td><td class="fdesc">Codo. En IK aplica inversión: 270 - angulos['codo'].</td></tr>
+    <tr><td class="fn">Canal 3</td><td>garra</td><td class="fdesc">Pinza: Abierta = 130° (pinza_abrir), Cerrada = 50° (pinza_cerrar).</td></tr>
+    <tr><td class="fn">Canal 5</td><td>cam_tilt</td><td class="fdesc">Inclinación vertical exclusiva de la cámara. En misión opera entre [15°, 110°].</td></tr>
+  </table>
+
+  <div class="slabel">Alerta de Mantenimiento en mover_brazo_a(x, y, z)</div>
+  <table class="ftbl">
+    <tr><th>Método</th><th>Estado</th><th>Acción Requerida en Sesión 03</th></tr>
+    <tr><td class="fn">mover_brazo_a(x, y, z)</td><td><span class="tag tr">Pendiente Sync</span></td><td class="fdesc">Añadir self.angulos['base'] = angulos['base'], self.angulos['brazo'] = angulos['hombro'] y self.angulos['muneca'] = codo_corregido tras enviar los pulsos PWM.</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- ══════════ PESTAÑA 7: TESTS ══════════ -->
+<div class="panel" id="p-tests">
+<div class="card">
+  <div class="ct">run_autonomous.py — Nuevo Ejecutor Maestro y Telemetría</div>
+  <p class="cs">Ubicado en la raíz del proyecto para ejecución directa (python3 run_autonomous.py). Al finalizar o abortar con Ctrl+C, imprime automáticamente el resumen de 5 métricas para auditoría.</p>
+
+  <div class="slabel">Estructura de Pruebas y Documentación en Git</div>
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="test-name">run_autonomous.py (Raíz)</div>
+      <div class="test-desc">Lanzador principal del modo autónomo a 10Hz. Registra marcas de tiempo en cada cambio de estado y emite el bloque "REPORTE DE TELEMETRÍA PARA IA ARQUITECTA" en el bloque finally.</div>
+      <span class="test-badge tb-int">Lanzador Maestro V10</span>
+    </div>
+    <div class="test-card">
+      <div class="test-name">CONTEXTO_IA.md (Raíz)</div>
+      <div class="test-desc">Memoria técnica comprimida (&lt;80 líneas) con constantes físicas, mapeo de canales y deuda técnica activa para inyectar contexto inmediato al abrir chats nuevos.</div>
+      <span class="test-badge tb-hw">Memoria Persistente</span>
+    </div>
+    <div class="test-card">
+      <div class="test-name">BITACORA.md (Raíz)</div>
+      <div class="test-desc">Historial cronológico de sesiones de ingeniería, decisiones de arquitectura y resultados de pruebas físicas.</div>
+      <span class="test-badge tb-nav">Registro de Ingeniería</span>
+    </div>
+    <div class="test-card">
+      <div class="test-name">tests/test_*.py (Subcarpeta)</div>
+      <div class="test-desc">12 scripts aislados de diagnóstico de hardware, visión, PID y calibración IK movidos fuera de la raíz para mantener limpio el directorio principal.</div>
+      <span class="test-badge tb-vis">Laboratorio Unitario</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const pmap={diagnostico:'p-diagnostico',arquitectura:'p-arquitectura',main:'p-main',mision:'p-mision',drivers:'p-drivers',motores:'p-motores',tests:'p-tests'};
+function tab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById(pmap[id]).classList.add('on');
+  event.currentTarget.classList.add('on');
+}
+</script>
+</body>
+</html>
